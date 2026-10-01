@@ -21,6 +21,7 @@ jobs:
 #      github.event.workflow_run.event == 'push' &&
 #      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
+    environment: lab-env
     timeout-minutes: 10
     env:
       SERVER_HOST: ${{ secrets.SERVER_HOST }}
