@@ -2,6 +2,8 @@
 
 Ejemplo para alumnos: crear usuarios, listar usuarios y observar una caché. La aplicación se despliega directamente en Ubuntu 24.04 con Python 3.12 y systemd. Docker se usa únicamente en GitHub Actions para PostgreSQL y Redis durante los tests.
 
+El CD ejecuta `rsync`, `pip` y `systemctl` para instalar la aplicación nativamente. Reemplaza cualquier workflow de despliegue anterior por `.github/workflows/cd.yml` de este proyecto: debe quedar un solo workflow de CD activo.
+
 ## Funcionamiento
 
 | Petición | Qué ocurre |
@@ -70,6 +72,50 @@ sudo systemctl daemon-reload
 sudo systemctl enable users-api.service
 ```
 
+Si aparece **`Unit file users-api.service does not exist`**, comprueba que ejecutaste `install` desde la raíz del proyecto con `ls -l deploy/users-api.service`. El CD solo copia `app/` y `requirements.txt`; los archivos de `deploy/` se preparan una vez en el servidor.
+
+Si no tienes la carpeta `deploy/` en Ubuntu, crea el servicio directamente:
+
+```bash
+sudo tee /etc/systemd/system/users-api.service >/dev/null <<'EOF'
+[Unit]
+Description=FastAPI users API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=deploy
+Group=deploy
+WorkingDirectory=/opt/users-api
+EnvironmentFile=/etc/users-api.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/users-api/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Crear el archivo de variables solo si todavía no existe.
+sudo test -e /etc/users-api.env || sudo install -m 600 /dev/null /etc/users-api.env
+sudo nano /etc/users-api.env
+sudo systemctl daemon-reload
+sudo systemctl enable users-api.service
+sudo systemctl cat users-api.service
+```
+
+En `/etc/users-api.env` deben estar estas variables, con los valores reales:
+
+```ini
+DATABASE_URL=postgresql://app_user:CAMBIA_ESTA_CLAVE@IP_POSTGRES:5432/app_db
+REDIS_URL=redis://IP_REDIS:6379/0
+CACHE_KEY=alumno01:users:all
+```
+
+`enable` configura el arranque automático, pero no inicia la API. El primer CD la iniciará después de instalar el código y las dependencias.
+
 Edita las URLs con tus IP privadas, base, usuario y contraseña reales. Cambia `CACHE_KEY` por alumno: `alumno01:users:all`, `alumno02:users:all`, etc. Si la contraseña tiene caracteres especiales, codifícalos para la URL. Redis no lleva contraseña en este ejemplo.
 
 systemd lee `/etc/users-api.env`; la aplicación no carga archivos `.env` automáticamente. El archivo pertenece a root y no se sube a GitHub. No arranques el servicio todavía: el primer CD creará el entorno virtual e instalará el código.
@@ -85,7 +131,7 @@ deploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart users-api.service
 En tu computadora, crea una clave exclusiva para el despliegue:
 
 ```bash
-ssh-keygen -t ed25519 -f github-deploy -N ""
+ssh-keygen -t ed25519 -C "lab_github" -f github-deploy -N ""
 ```
 
 En el servidor, agrega el contenido de `github-deploy.pub` a `/home/deploy/.ssh/authorized_keys`, usando `sudo nano`. Luego:
@@ -114,10 +160,10 @@ Para obtener la identidad del servidor, ejecuta en su consola `sudo cat /etc/ssh
 IP_SERVIDOR ssh-ed25519 CLAVE_PUBLICA_DEL_SERVIDOR
 ```
 
-- **CI:** cada push y pull request ejecuta Ruff y seis tests, usando PostgreSQL y Redis en Docker dentro del runner.
-- **CD:** después de un CI exitoso de un push a `main`, copia el commit probado a `/opt/users-api`, instala dependencias, reinicia el servicio y consulta `/health`. Los pull requests no despliegan.
+- **CI:** cada push y pull request ejecuta Ruff y seis tests. Python, PostgreSQL y Redis usan contenedores dentro del runner. Las conexiones usan los nombres `postgres` y `redis`; las credenciales de prueba se definen en `ci.yml`, sin secretos del servidor.
+- **CD:** después de un CI exitoso de un push a `main`, sincroniza `app/` y copia `requirements.txt` a `/opt/users-api`, instala dependencias en `.venv`, reinicia `users-api.service` y consulta `/health`. Los pull requests no despliegan. Las variables de PostgreSQL y Redis se leen de `/etc/users-api.env`.
 
-El runner debe alcanzar el servidor por SSH en el puerto 22. Si solo tiene IP privada, usa un runner propio dentro de la VPC. En GCP, la configuración SSH/OS Login debe permitir que `deploy` se autentique con `authorized_keys` para este ejemplo.
+El runner debe alcanzar el servidor por SSH en el puerto 22 y disponer de SSH, SCP y rsync, disponibles en el runner Ubuntu de GitHub. Si solo tiene IP privada, usa un runner propio dentro de la VPC e instala esas herramientas allí. En GCP, la configuración SSH/OS Login debe permitir que `deploy` se autentique con `authorized_keys` para este ejemplo.
 
 El firewall debe permitir TCP 8000 desde los alumnos, y la aplicación debe alcanzar PostgreSQL:5432 y Redis:6379. El workflow no cambia las credenciales ni la configuración del servicio.
 
