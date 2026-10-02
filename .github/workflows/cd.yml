@@ -49,7 +49,7 @@ jobs:
 
       - name: Instalar y reiniciar
         run: |
-          ssh "$SERVER_USER@$SERVER_HOST" 'bash -se' <<'REMOTE'
+          ssh -i ~/.ssh/deploy_key "$SERVER_USER@$SERVER_HOST" 'bash -se' <<'REMOTE'
           set -euo pipefail
           cd /opt/users-api
           if [ ! -d .venv ]; then
