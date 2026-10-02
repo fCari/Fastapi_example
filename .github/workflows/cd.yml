@@ -40,8 +40,12 @@ jobs:
 
       - name: Subir el código
         run: |
-          rsync -az --delete app/ "$SERVER_USER@$SERVER_HOST:/opt/users-api/app/"
-          scp requirements.txt "$SERVER_USER@$SERVER_HOST:/opt/users-api/requirements.txt"
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            app/ "$SERVER_USER@$SERVER_HOST:/opt/users-api/app/"
+          scp -i ~/.ssh/deploy_key \
+            requirements.txt \
+            "$SERVER_USER@$SERVER_HOST:/opt/users-api/requirements.txt"
 
       - name: Instalar y reiniciar
         run: |
@@ -59,4 +63,4 @@ jobs:
 
       - name: Limpiar clave SSH
         if: always()
-        run: rm -f ~/.ssh/id_ed25519
+        run: rm -f ~/.ssh/deploy_key
