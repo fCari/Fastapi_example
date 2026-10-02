@@ -2,13 +2,9 @@ name: CD Ubuntu
 # El servidor ejecuta Python + Uvicorn mediante systemd.
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
-
-permissions:
-  contents: read
+  push:
+    branches:
+      - main
 
 concurrency:
   group: deploy-ubuntu
