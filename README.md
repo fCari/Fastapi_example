@@ -1,3 +1,5 @@
+Ejecutando...
+
 # FastAPI con PostgreSQL y Redis en Ubuntu
 
 Ejemplo para alumnos: crear usuarios, listar usuarios y observar una caché. La aplicación se despliega directamente en Ubuntu 24.04 con Python 3.12 y systemd. Docker se usa únicamente en GitHub Actions para PostgreSQL y Redis durante los tests.
