@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
 from psycopg.errors import UniqueViolation
 
 from app import database, service
@@ -15,6 +16,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Usuarios con PostgreSQL y Redis", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+    expose_headers=["X-Cache"],
+)
 
 
 @app.get("/health")
