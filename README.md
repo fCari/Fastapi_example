@@ -1,4 +1,13 @@
-Ejecutando...1234
+# Docker
+```bash
+docker compose config --quiet
+docker compose up -d --build
+docker compose ps
+docker compose logs -f api
+docker compose exec api sh
+docker compose stop
+docker compose down
+```
 
 # FastAPI con PostgreSQL y Redis en Ubuntu
 
