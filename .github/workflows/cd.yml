@@ -48,7 +48,7 @@ jobs:
           ACCOUNT_ID=$(aws sts get-caller-identity \
             --query Account --output text)
 
-          IMAGE_URI="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/tecpsup/alumno_fready:$IMAGE_TAG"
+          IMAGE_URI="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/test/fredy:$IMAGE_TAG"
 
           echo "Deploying image: $IMAGE_URI"
 
