@@ -1,5 +1,5 @@
 services:
-  api:
+  backend:
     build: .
     image: ${API_IMAGE:-fredy/users-api:v1}
     ports:
@@ -20,6 +20,9 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+    networks:
+      - default
+      - laboratorio_net
 
   postgres:
     image: postgres:16-alpine
@@ -47,3 +50,6 @@ services:
 
 volumes:
   postgres_data:
+networks:
+  laboratorio_net:
+    name: laboratorio_net
