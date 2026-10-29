@@ -36,7 +36,7 @@ jobs:
       - name: Build and push immutable release image
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-          ECR_REPOSITORY: tecpsup/alumno_fready
+          ECR_REPOSITORY: test/fredy
           IMAGE_TAG: ${{ github.sha }}
         run: |
           set -euo pipefail
