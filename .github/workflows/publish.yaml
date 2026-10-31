@@ -22,17 +22,6 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v6
-      - name: Debug OIDC sub
-        run: |
-          TOKEN=$(curl -sH "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r .value)
-          python3 - "$TOKEN" <<'EOF'
-          import sys, json, base64
-          p = sys.argv[1].split('.')[1]
-          p += '=' * (-len(p) % 4)
-          d = json.loads(base64.urlsafe_b64decode(p))
-          print(json.dumps({k: d.get(k) for k in ('sub', 'aud', 'iss')}, indent=2))
-          EOF
 
       - name: Configure AWS credentials using GitHub OIDC
         uses: aws-actions/configure-aws-credentials@v6.3.0

@@ -34,7 +34,7 @@ jobs:
 
       - name: Deploy FastAPI using SSM
         env:
-          EC2_INSTANCE_ID: i-02e8d61d259b87fb0 
+          EC2_INSTANCE_ID: i-0f13fe3124688e843
           IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
           AWS_REGION: us-east-1
         run: |
