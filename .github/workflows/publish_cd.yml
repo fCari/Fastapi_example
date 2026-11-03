@@ -41,7 +41,7 @@ jobs:
         id: build
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-          ECR_REPOSITORY: tecpsup/jose_armando
+          ECR_REPOSITORY: test/fredy
           IMAGE_TAG: ${{ github.sha }}
         run: |
           set -euo pipefail
