@@ -28,7 +28,7 @@ app.add_middleware(
 @app.get("/health")
 def health():
     # Liveness: indica que la API responde, no verifica las dependencias.
-    return {"status": "ok"}
+    return {"status": "ok2"}
 
 
 @app.get("/users", response_model=list[UserRead])
