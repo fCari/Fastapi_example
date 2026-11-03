@@ -1,106 +1,106 @@
-name: Build and Deploy FastAPI to ECS
+# name: Build and Deploy FastAPI to ECS
 
-on:
-  push:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
 
-permissions:
-  contents: read
-  id-token: write
+# permissions:
+#   contents: read
+#   id-token: write
 
-concurrency:
-  group: ecs-deploy-${{ github.ref_name }}
-  cancel-in-progress: false
+# concurrency:
+#   group: ecs-deploy-${{ github.ref_name }}
+#   cancel-in-progress: false
 
-env:
-  AWS_REGION: us-east-1
-  ECR_REPOSITORY: test/fredy
-  ECS_CLUSTER: fastapi-cluster
-  CONTAINER_NAME: api
+# env:
+#   AWS_REGION: us-east-1
+#   ECR_REPOSITORY: test/fredy
+#   ECS_CLUSTER: fastapi-cluster
+#   CONTAINER_NAME: api
 
-jobs:
-  tests:
-    uses: ./.github/workflows/ci.yml
-    permissions:
-      contents: read
+# jobs:
+#   tests:
+#     uses: ./.github/workflows/ci.yml
+#     permissions:
+#       contents: read
 
-  publish:
-    needs: tests
-    runs-on: ubuntu-latest
-    environment: ${{ startsWith(github.ref_name, 'release/') && 'production' || 'lab-env' }}
-    outputs:
-      image_uri: ${{ steps.build.outputs.image_uri }}
-      target: ${{ steps.target.outputs.name }}
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v6
+#   publish:
+#     needs: tests
+#     runs-on: ubuntu-latest
+#     environment: ${{ startsWith(github.ref_name, 'release/') && 'production' || 'lab-env' }}
+#     outputs:
+#       image_uri: ${{ steps.build.outputs.image_uri }}
+#       target: ${{ steps.target.outputs.name }}
+#     steps:
+#       - name: Checkout source
+#         uses: actions/checkout@v6
 
-      - name: Resolve target (branch -> environment)
-        id: target
-        run: |
-          echo "name=staging" >> "$GITHUB_OUTPUT"
-          echo "version=dev" >> "$GITHUB_OUTPUT"
+#       - name: Resolve target (branch -> environment)
+#         id: target
+#         run: |
+#           echo "name=staging" >> "$GITHUB_OUTPUT"
+#           echo "version=dev" >> "$GITHUB_OUTPUT"
 
-      - name: Configure AWS credentials using GitHub OIDC
-        uses: aws-actions/configure-aws-credentials@v6.3.0
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+#       - name: Configure AWS credentials using GitHub OIDC
+#         uses: aws-actions/configure-aws-credentials@v6.3.0
+#         with:
+#           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+#           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Log in to Amazon ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
+#       - name: Log in to Amazon ECR
+#         id: ecr
+#         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push image
-        id: build
-        env:
-          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-          VERSION: ${{ steps.target.outputs.version }}
-        run: |
-          set -euo pipefail
-          SHA_TAG="${{ github.sha }}"
-          SHORT_SHA="${SHA_TAG:0:7}"
-          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$SHA_TAG"
+#       - name: Build and push image
+#         id: build
+#         env:
+#           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+#           VERSION: ${{ steps.target.outputs.version }}
+#         run: |
+#           set -euo pipefail
+#           SHA_TAG="${{ github.sha }}"
+#           SHORT_SHA="${SHA_TAG:0:7}"
+#           IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$SHA_TAG"
 
-          docker build \
-            --provenance=false \
-            -f Dockerfile.prod \
-            -t "$IMAGE_URI" \
-            -t "$ECR_REGISTRY/$ECR_REPOSITORY:${VERSION}-${SHORT_SHA}" .
+#           docker build \
+#             --provenance=false \
+#             -f Dockerfile.prod \
+#             -t "$IMAGE_URI" \
+#             -t "$ECR_REGISTRY/$ECR_REPOSITORY:${VERSION}-${SHORT_SHA}" .
 
-          docker push "$IMAGE_URI"
-          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:${VERSION}-${SHORT_SHA}"
+#           docker push "$IMAGE_URI"
+#           docker push "$ECR_REGISTRY/$ECR_REPOSITORY:${VERSION}-${SHORT_SHA}"
 
-          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
-          echo "Published $IMAGE_URI"
+#           echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+#           echo "Published $IMAGE_URI"
 
-  deploy:
-    needs: publish
-    runs-on: ubuntu-latest
-    environment: ${{ startsWith(github.ref_name, 'release/') && 'production' || 'lab-env' }}
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v6
+#   deploy:
+#     needs: publish
+#     runs-on: ubuntu-latest
+#     environment: ${{ startsWith(github.ref_name, 'release/') && 'production' || 'lab-env' }}
+#     steps:
+#       - name: Checkout source
+#         uses: actions/checkout@v6
 
-      - name: Configure AWS credentials using GitHub OIDC
-        uses: aws-actions/configure-aws-credentials@v6.3.0
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+#       - name: Configure AWS credentials using GitHub OIDC
+#         uses: aws-actions/configure-aws-credentials@v6.3.0
+#         with:
+#           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+#           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Render task definition with new image
-        id: render
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: .aws/taskdef-${{ needs.publish.outputs.target }}.json
-          container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ needs.publish.outputs.image_uri }}
+#       - name: Render task definition with new image
+#         id: render
+#         uses: aws-actions/amazon-ecs-render-task-definition@v1
+#         with:
+#           task-definition: .aws/taskdef-${{ needs.publish.outputs.target }}.json
+#           container-name: ${{ env.CONTAINER_NAME }}
+#           image: ${{ needs.publish.outputs.image_uri }}
 
-      - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.render.outputs.task-definition }}
-          service: fastapi-example-staging-service-e2fb6y1s #fastapi-${{ needs.publish.outputs.target }}
-          cluster: fastapi-cluster #${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
+#       - name: Deploy to Amazon ECS
+#         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+#         with:
+#           task-definition: ${{ steps.render.outputs.task-definition }}
+#           service: fastapi-example-staging-service-e2fb6y1s #fastapi-${{ needs.publish.outputs.target }}
+#           cluster: fastapi-cluster #${{ env.ECS_CLUSTER }}
+#           wait-for-service-stability: true
