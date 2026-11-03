@@ -63,7 +63,9 @@ jobs:
           SHORT_SHA="${SHA_TAG:0:7}"
           IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$SHA_TAG"
 
-          docker build -f Dockerfile.prod \
+          docker build \
+            --provenance=false \
+            -f Dockerfile.prod \
             -t "$IMAGE_URI" \
             -t "$ECR_REGISTRY/$ECR_REPOSITORY:${VERSION}-${SHORT_SHA}" .
 
