@@ -74,8 +74,10 @@ jobs:
         id: render
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition-family: fastapi-task
-          container-name: fastapi
+          # task-definition-family: fastapi-task
+          # container-name: fastapi
+          task-definition: .aws/task-definition.json   # ruta en tu repo
+          container-name: api
           image: ${{ needs.publish.outputs.image_uri }}
 
       - name: Deploy to Amazon ECS
