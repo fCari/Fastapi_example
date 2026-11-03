@@ -99,6 +99,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.render.outputs.task-definition }}
-          service: fastapi-${{ needs.publish.outputs.target }}
-          cluster: ${{ env.ECS_CLUSTER }}
+          service: fastapi-example-staging-service-e2fb6y1s #fastapi-${{ needs.publish.outputs.target }}
+          cluster: fastapi-cluster #${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
