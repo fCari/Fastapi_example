@@ -82,7 +82,7 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.render.outputs.task-definition }}
-          service: fastapi-service
+          service: fastapi-example-staging-service-e2fb6y1s
           cluster: fastapi-cluster
           wait-for-service-stability: true
           wait-max-delay-seconds: 15
