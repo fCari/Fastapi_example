@@ -77,7 +77,7 @@ jobs:
           # task-definition-family: fastapi-task
           # container-name: fastapi
           # task-definition: .aws/task-definition.json   # ruta en tu repo
-          task-definition: .aws/taskdef-${{ needs.publish.outputs.target }}.json
+          task-definition: .aws/taskdef-staging.json
           container-name: api
           image: ${{ needs.publish.outputs.image_uri }}
 
