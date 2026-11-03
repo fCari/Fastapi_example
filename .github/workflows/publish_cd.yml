@@ -64,19 +64,19 @@ jobs:
       id-token: write
 
     steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} #secrets.AWS_ECS_DEPLOY_ROLE_ARN
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Render ECS task definition
         id: render
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          # task-definition-family: fastapi-task
-          # container-name: fastapi
-          # task-definition: .aws/task-definition.json   # ruta en tu repo
           task-definition: .aws/taskdef-staging.json
           container-name: api
           image: ${{ needs.publish.outputs.image_uri }}
@@ -88,4 +88,4 @@ jobs:
           service: fastapi-example-staging-service-e2fb6y1s
           cluster: fastapi-cluster
           wait-for-service-stability: true
-          wait-max-delay-seconds: 15
+          wait-max-delay-seconds: 600
